@@ -118,10 +118,9 @@
 </head>
 <body>
     <div class="container">
-        <h2>Welcome to CodeBin</h2>
-        <p>CodeBin is a simple tool to save and share your code snippets.</p>
-        <p>Enter a title and your code below, then click <strong>Save</strong>.</p>
-        <input type="text" id="titleInput" placeholder="Title">
+        <h2>Welcome to GoatBin</h2>
+        <p>Goatbot Bin is a simple tool to save and share your code snippets.</p>
+        <p>Enter your code below, then click <strong>Save</strong>.</p>
         <textarea id="codeInput" placeholder="Enter your code here"></textarea>
         <button onclick="saveCode()">Save</button>
         <div id="linkContainer" class="link"></div>
@@ -138,7 +137,6 @@
 
     <script>
         function saveCode() {
-            const title = document.getElementById('titleInput').value;
             const code = document.getElementById('codeInput').value;
             const linkContainer = document.getElementById('linkContainer');
             const loadingIndicator = document.getElementById('loadingIndicator');
@@ -179,6 +177,31 @@
             codeLink.select();
             document.execCommand('copy');
         }
+
+        // Function to control RGB LED
+        function controlRGB(color) {
+            // Send a request to your backend to control the RGB LED
+            fetch('/control-rgb', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ color })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                console.log('RGB LED control successful');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Handle error
+            });
+        }
+
+        // Example usage: Turn on red LED
+        controlRGB('red');
     </script>
 </body>
 </html>
