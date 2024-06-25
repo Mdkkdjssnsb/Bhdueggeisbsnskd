@@ -13,20 +13,25 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const storeFolderPath = path.join(__dirname, 'store');
-
 // Middleware
 app.use(bodyParser.json());
 
-// Load existing data or initialize an empty object
+// Initialize data object
 let data = {};
-const dataFilePath = path.join(storeFolderPath, 'data.json');
-if (fs.existsSync(dataFilePath)) {
+
+// Data file path
+const dataFilePath = path.join(__dirname, 'data.json');
+
+// Check if data file exists, if not, create it
+if (!fs.existsSync(dataFilePath)) {
+    fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
+} else {
+    // Load data from existing file
     const fileContent = fs.readFileSync(dataFilePath, 'utf8');
     data = JSON.parse(fileContent);
 }
 
-// Save data to file
+// Save data to file with added spaces
 function saveData() {
     fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
 }
@@ -49,7 +54,7 @@ app.post('/api/goatbin/v1', (req, res) => {
     }
 
     const randomText = generateRandomText();
-    data[randomText] = { code, createdAt: new Date().toISOString() };
+    data[randomText] = { code: code.replace(/\n/g, '\n '), createdAt: new Date().toISOString() };
     saveData();
 
     res.json({ link: `${req.protocol}://${req.get('host')}/raw/${randomText}` });
@@ -68,7 +73,7 @@ app.get('/raw/:id', (req, res) => {
 
 // Website uptime check
 const websiteURL = 'https://goatbin.onrender.com'; // Change this to your website URL
-const uptimeFilePath = path.join(storeFolderPath, 'uptime.json');
+const uptimeFilePath = path.join(__dirname, 'uptime.json');
 
 function checkWebsiteUptime() {
     http.get(websiteURL, (res) => {
@@ -84,28 +89,6 @@ function checkWebsiteUptime() {
 
 // Schedule website uptime check every 5 minutes
 setInterval(checkWebsiteUptime, 5 * 60 * 1000);
-
-// Route to send all data from the store folder
-app.get('/send-data', (req, res) => {
-    // Read all files in the store folder
-    fs.readdir(storeFolderPath, (err, files) => {
-        if (err) {
-            return res.status(500).json({ error: 'Internal server error' });
-        }
-
-        // Object to hold data from all files
-        const allData = {};
-
-        // Loop through each file
-        files.forEach(file => {
-            const filePath = path.join(storeFolderPath, file);
-            const fileContent = fs.readFileSync(filePath, 'utf8');
-            allData[file] = JSON.parse(fileContent); // Assuming files contain JSON data
-        });
-
-        res.json(allData);
-    });
-});
 
 // Start the server
 app.listen(port, () => {
