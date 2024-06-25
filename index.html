@@ -145,7 +145,7 @@
             // Show loading indicator
             loadingIndicator.style.display = 'block';
 
-            fetch('/api/goatbin', {
+            fetch('/api/goatbin/v1', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -177,31 +177,6 @@
             codeLink.select();
             document.execCommand('copy');
         }
-
-        // Function to control RGB LED
-        function controlRGB(color) {
-            // Send a request to your backend to control the RGB LED
-            fetch('/control-rgb', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ color })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                console.log('RGB LED control successful');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Handle error
-            });
-        }
-
-        // Example usage: Turn on red LED
-        controlRGB('red');
     </script>
 </body>
 </html>
