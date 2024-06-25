@@ -54,7 +54,8 @@ app.post('/api/goatbin/v1', (req, res) => {
     }
 
     const randomText = generateRandomText();
-    data[randomText] = { code: code.replace(/\n/g, '\n '), createdAt: new Date().toISOString() };
+    // Save code with added spaces preserving formatting
+    data[randomText] = { code: code, createdAt: new Date().toISOString() };
     saveData();
 
     res.json({ link: `${req.protocol}://${req.get('host')}/raw/${randomText}` });
