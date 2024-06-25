@@ -2,22 +2,25 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
+const { setInterval } = require('timers');
 
 const app = express();
-const port = 3000;// Serve the HTML file
+const port = 3000;
+
+// Serve the HTML file
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
+    res.sendFile(__dirname + '/index.html');
 });
 
-
-
-const dataFilePath = path.join(__dirname, 'data.json');
+const storeFolderPath = path.join(__dirname, 'store');
 
 // Middleware
 app.use(bodyParser.json());
 
 // Load existing data or initialize an empty object
 let data = {};
+const dataFilePath = path.join(storeFolderPath, 'data.json');
 if (fs.existsSync(dataFilePath)) {
     const fileContent = fs.readFileSync(dataFilePath, 'utf8');
     data = JSON.parse(fileContent);
@@ -39,7 +42,7 @@ function generateRandomText(length = 6) {
 }
 
 // Routes
-app.post('/save', (req, res) => {
+app.post('/api/goatbin/v1', (req, res) => {
     const { code } = req.body;
     if (!code) {
         return res.status(400).json({ error: 'Code is required' });
@@ -49,8 +52,8 @@ app.post('/save', (req, res) => {
     data[randomText] = { code, createdAt: new Date().toISOString() };
     saveData();
 
-  res.json({ link: `${req.protocol}://${req.get('host')}/raw/${randomText}` });
-  });
+    res.json({ link: `${req.protocol}://${req.get('host')}/raw/${randomText}` });
+});
 
 app.get('/raw/:id', (req, res) => {
     const { id } = req.params;
@@ -63,6 +66,48 @@ app.get('/raw/:id', (req, res) => {
     res.json(snippet.code);
 });
 
+// Website uptime check
+const websiteURL = 'https://goatbin.onrender.com.com'; // Change this to your website URL
+const uptimeFilePath = path.join(storeFolderPath, 'uptime.json');
+
+function checkWebsiteUptime() {
+    http.get(websiteURL, (res) => {
+        const statusCode = res.statusCode;
+        const status = statusCode >= 200 && statusCode < 300 ? 'UP' : 'DOWN';
+        const uptimeData = { status, timestamp: new Date().toISOString() };
+        fs.writeFileSync(uptimeFilePath, JSON.stringify(uptimeData, null, 2));
+    }).on('error', (err) => {
+        const uptimeData = { status: 'DOWN', timestamp: new Date().toISOString(), error: err.message };
+        fs.writeFileSync(uptimeFilePath, JSON.stringify(uptimeData, null, 2));
+    });
+}
+
+// Schedule website uptime check every 5 minutes
+setInterval(checkWebsiteUptime, 5 * 60 * 1000);
+
+// Route to send all data from the store folder
+app.get('/send-data', (req, res) => {
+    // Read all files in the store folder
+    fs.readdir(storeFolderPath, (err, files) => {
+        if (err) {
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+
+        // Object to hold data from all files
+        const allData = {};
+
+        // Loop through each file
+        files.forEach(file => {
+            const filePath = path.join(storeFolderPath, file);
+            const fileContent = fs.readFileSync(filePath, 'utf8');
+            allData[file] = JSON.parse(fileContent); // Assuming files contain JSON data
+        });
+
+        res.json(allData);
+    });
+});
+
+// Start the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
-}); 
+});
