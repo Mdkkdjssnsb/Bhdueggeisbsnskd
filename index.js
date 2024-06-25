@@ -33,7 +33,12 @@ if (!fs.existsSync(dataFilePath)) {
 
 // Save data to file with added spaces
 function saveData() {
-    fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
+    fs.writeFileSync(dataFilePath, JSON.stringify(data, (key, value) => {
+        if (typeof value === 'string') {
+            return value.replace(/\n/g, ' ');
+        }
+        return value;
+    }, 2));
 }
 
 // Generate random text for link
