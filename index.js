@@ -10,7 +10,7 @@ const port = 3000;
 
 // Serve the HTML file
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const storeFolderPath = path.join(__dirname, 'store');
@@ -63,11 +63,11 @@ app.get('/raw/:id', (req, res) => {
         return res.status(404).json({ error: 'Snippet not found' });
     }
 
-    res.json(snippet.code);
+    res.json(snippet);
 });
 
 // Website uptime check
-const websiteURL = 'https://goatbin.onrender.com.com'; // Change this to your website URL
+const websiteURL = 'https://goatbin.onrender.com'; // Change this to your website URL
 const uptimeFilePath = path.join(storeFolderPath, 'uptime.json');
 
 function checkWebsiteUptime() {
