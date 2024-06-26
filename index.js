@@ -8,6 +8,10 @@ const cron = require('node-cron'); // For scheduled tasks
 
 const app = express();
 const port = 3000;
+// Serve the HTML file
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Middleware
 app.use(bodyParser.json());
@@ -74,7 +78,7 @@ app.post('/api/goatbin/v1', (req, res) => {
     }
 
     const randomText = generateRandomText();
-    data[randomText] = { code: code, createdAt: new Date().toISOString() };
+    data[randomText] = { code };
     saveData();
 
     res.json({ link: `${req.protocol}://${req.get('host')}/raw/${randomText}` });
