@@ -8,6 +8,7 @@ const cron = require('node-cron'); // For scheduled tasks
 
 const app = express();
 const port = 3000;
+
 // Serve the HTML file
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -78,10 +79,10 @@ app.post('/api/goatbin/v1', (req, res) => {
     }
 
     const randomText = generateRandomText();
-    data[randomText] = { code };
+    data[randomText] = code;  // Store raw code as string
     saveData();
 
-    res.json({ link: `${req.protocol}://${req.get('host')}/raw/${randomText}`, data: data[randomText] });
+    res.json({ link: `${req.protocol}://${req.get('host')}/raw/${randomText}` });
 });
 
 app.get('/raw/:id', (req, res) => {
@@ -92,7 +93,20 @@ app.get('/raw/:id', (req, res) => {
         return res.status(404).json({ error: 'Snippet not found' });
     }
 
-    res.json(snippet);
+    res.send(snippet); // Send raw code as plain text
+});
+
+app.get('/send', (req, res) => {
+    const { code } = req.query;
+    if (!code) {
+        return res.status(400).json({ error: 'Code is required in the query parameter' });
+    }
+
+    const randomText = generateRandomText();
+    data[randomText] = code;  // Store raw code as string
+    saveData();
+
+    res.json({ link: `${req.protocol}://${req.get('host')}/raw/${randomText}` });
 });
 
 // Website uptime check
