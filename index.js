@@ -93,6 +93,7 @@ app.get('/raw/:id', (req, res) => {
         return res.status(404).json({ error: 'Snippet not found' });
     }
 
+    res.setHeader('Content-Type', 'text/plain'); // Set content type to plain text
     res.send(snippet); // Send raw code as plain text
 });
 
@@ -102,8 +103,9 @@ app.get('/send', (req, res) => {
         return res.status(400).json({ error: 'Code is required in the query parameter' });
     }
 
+    const decodedCode = decodeURIComponent(code); // Decode the URL-encoded code
     const randomText = generateRandomText();
-    data[randomText] = code;  // Store raw code as string
+    data[randomText] = decodedCode;  // Store raw code as string
     saveData();
 
     res.json({ link: `${req.protocol}://${req.get('host')}/raw/${randomText}` });
