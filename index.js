@@ -81,7 +81,7 @@ app.post('/api/goatbin/v1', (req, res) => {
     data[randomText] = { code };
     saveData();
 
-    res.json({ link: `${req.protocol}://${req.get('host')}/raw/${randomText}` });
+    res.json({ link: `${req.protocol}://${req.get('host')}/raw/${randomText}`, data: data[randomText] });
 });
 
 app.get('/raw/:id', (req, res) => {
