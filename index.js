@@ -4,14 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const { setInterval } = require('timers');
+const cron = require('node-cron'); // For scheduled tasks
 
 const app = express();
 const port = 3000;
-
-// Serve the HTML file
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
 
 // Middleware
 app.use(bodyParser.json());
@@ -22,23 +18,24 @@ let data = {};
 // Data file path
 const dataFilePath = path.join(__dirname, 'data.json');
 
-// Check if data file exists, if not, create it
+// Backup folder path
+const backupFolderPath = path.join(__dirname, 'backups');
+if (!fs.existsSync(backupFolderPath)) {
+    fs.mkdirSync(backupFolderPath);
+}
+
+// Load data from file or create it if it doesn't exist
 if (!fs.existsSync(dataFilePath)) {
     fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
 } else {
-    // Load data from existing file
     const fileContent = fs.readFileSync(dataFilePath, 'utf8');
     data = JSON.parse(fileContent);
 }
 
-// Save data to file with added spaces
+// Save data to file
 function saveData() {
-    fs.writeFileSync(dataFilePath, JSON.stringify(data, (key, value) => {
-        if (typeof value === 'string') {
-            return value.replace(/\n/g, ' ');
-        }
-        return value;
-    }, 2));
+    fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
+    createBackup();
 }
 
 // Generate random text for link
@@ -51,6 +48,24 @@ function generateRandomText(length = 6) {
     return randomText;
 }
 
+// Create a backup of the data file
+function createBackup() {
+    const backupFilePath = path.join(backupFolderPath, `data_${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+    fs.copyFileSync(dataFilePath, backupFilePath);
+}
+
+// Restore the latest backup
+function restoreLatestBackup() {
+    const backups = fs.readdirSync(backupFolderPath).filter(file => file.endsWith('.json'));
+    if (backups.length > 0) {
+        const latestBackup = backups.sort().pop();
+        const backupFilePath = path.join(backupFolderPath, latestBackup);
+        const backupContent = fs.readFileSync(backupFilePath, 'utf8');
+        data = JSON.parse(backupContent);
+        saveData();
+    }
+}
+
 // Routes
 app.post('/api/goatbin/v1', (req, res) => {
     const { code } = req.body;
@@ -59,7 +74,6 @@ app.post('/api/goatbin/v1', (req, res) => {
     }
 
     const randomText = generateRandomText();
-    // Save code with added spaces preserving formatting
     data[randomText] = { code: code, createdAt: new Date().toISOString() };
     saveData();
 
@@ -95,6 +109,9 @@ function checkWebsiteUptime() {
 
 // Schedule website uptime check every 5 minutes
 setInterval(checkWebsiteUptime, 5 * 60 * 1000);
+
+// Schedule a daily backup at midnight
+cron.schedule('0 0 * * *', createBackup);
 
 // Start the server
 app.listen(port, () => {
